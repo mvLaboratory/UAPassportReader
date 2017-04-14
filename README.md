@@ -1,6 +1,6 @@
 ## Synopsis
 
-App for reading data from ukrainian passport card using NFC reader. All data is saving on users hard drive in specify directory.
+App for reading data from Ukrainian passport card using NFC reader. All data is saving on users hard drive in specify directory.
 App can be used for 1C integration.
 
 
