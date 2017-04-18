@@ -16,11 +16,13 @@ public class Person implements Serializable {
     private String nationality = "";
     private String docNumber = "";
     private String docDateOExpiry = "";
+    private Date docDateOfIssue;
+    private String docIssuingAuthority = "";
 
     public Person() {
     }
 
-    public Person(String names, List<String> otherNames, Date dateOfBirth, List<String> placeOfBirthList, String gender, String nationality, String docNumber, String docDateOExpiry) {
+    public Person(String names, List<String> otherNames, Date dateOfBirth, List<String> placeOfBirthList, String gender, String nationality, String docNumber, String docDateOExpiry, String docIssuingAuthority, Date docDateOfIssue) {
         parseName(names);
 
         if (otherNames.size() > 0) {
@@ -31,6 +33,9 @@ public class Person implements Serializable {
         this.nationality = nationality;
         this.docNumber = docNumber;
         this.docDateOExpiry = docDateOExpiry;
+        this.docDateOfIssue = docDateOfIssue;
+        this.docIssuingAuthority = docIssuingAuthority;
+
         setPlaceOfBirth(placeOfBirthList);
     }
 
@@ -112,6 +117,22 @@ public class Person implements Serializable {
 
     public void setDocDateOExpiry(String docDateOExpiry) {
         this.docDateOExpiry = docDateOExpiry;
+    }
+
+    public Date getDocDateOfIssue() {
+        return docDateOfIssue;
+    }
+
+    public void setDocDateOfIssue(Date docDateOfIssue) {
+        this.docDateOfIssue = docDateOfIssue;
+    }
+
+    public String getDocIssuingAuthority() {
+        return docIssuingAuthority;
+    }
+
+    public void setDocIssuingAuthority(String docIssuingAuthority) {
+        this.docIssuingAuthority = docIssuingAuthority;
     }
 
     public String getPlaceOfBirth() {

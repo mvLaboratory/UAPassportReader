@@ -4,10 +4,8 @@ import org.jmrtd.BACKeySpec;
 import org.jmrtd.PassportService;
 import org.jmrtd.lds.*;
 import net.sf.scuba.smartcards.CardFileInputStream;
-import org.jmrtd.lds.COMFile;
 import reader.PersonSerilizer;
 import reader.TerminalCardService;
-
 import javax.imageio.ImageIO;
 import javax.smartcardio.*;
 import java.awt.image.BufferedImage;
@@ -17,23 +15,27 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Main {
-    private COMFile comFile;
-    private SODFile sodFile;
-    private DG1File dg1File;
-    private DG2File dg2File;
-
     public static void main(String[] args) throws IOException {
+        Logger globalLogger = Logger.getLogger("");
+        globalLogger.setUseParentHandlers(false);
+        globalLogger.setLevel(Level.OFF);
+
         if (args.length < 4) {
-            System.out.println("Argument Exception ");
+            System.out.println("Not enough arguments!");
             return;
         }
+
         String passportNumber = args[0];
         String birthDate = args[1];
         String expirationDate = args[2];
         String fileTemp = args[3];
         fileTemp = fileTemp.replaceAll("\\?", " ");
+
+        System.setOut(new PrintStream("" + fileTemp + "\\log.txt"));
 
         BACKeySpec bacKey = new BACKey(passportNumber, birthDate, expirationDate);
 
@@ -57,7 +59,7 @@ public class Main {
                 testOutput(fileTemp);
             }
             else {
-                System.out.println("Card Exception ");
+                System.out.println("Card is missing!");
                 e.printStackTrace();
             }
             return;
@@ -70,34 +72,18 @@ public class Main {
             passportService.doBAC(bacKey);
         } catch (Exception e) {
             e.printStackTrace();
+            System.out.println("Wrong security data!");
             return;
         }
 
-
         LDS lds = new LDS();
-       // LDS lds2 = new LDS();
-       // InputStream is = null;
-        COMFile comFile;
-        //COMFile comFile2;
-        String fileText1;
-        String fileText2;
-        SODFile sodFile;
         DG1File dg1File;
         DG2File dg2File;
         DG7File dg7File;
         DG11File dg11File;
+        DG12File dg12File;
 
         try {
-            CardFileInputStream comIn = passportService.getInputStream(PassportService.EF_COM);
-            lds.add(PassportService.EF_COM, comIn, comIn.getLength());
-            comFile = lds.getCOMFile();
-            fileText1 = comFile.toString();
-
-            CardFileInputStream sodIn = passportService.getInputStream(PassportService.EF_SOD);
-            lds.add(PassportService.EF_SOD, sodIn, sodIn.getLength());
-            sodFile = lds.getSODFile();
-            fileText2 = sodFile.toString();
-
             CardFileInputStream dg1In = passportService.getInputStream(PassportService.EF_DG1);
             lds.add(PassportService.EF_DG1, dg1In, dg1In.getLength());
             dg1File = lds.getDG1File();
@@ -109,6 +95,11 @@ public class Main {
             CardFileInputStream dg2In = passportService.getInputStream(PassportService.EF_DG2);
             lds.add(PassportService.EF_DG2, dg2In, dg2In.getLength());
             dg2File = lds.getDG2File();
+
+            CardFileInputStream dg12In = passportService.getInputStream(PassportService.EF_DG12);
+            lds.add(PassportService.EF_DG12, dg12In, dg12In.getLength());
+            dg12File = lds.getDG12File();
+
 
             List<FaceImageInfo> allFaceImageInfos = new ArrayList<FaceImageInfo>();
             List<FaceInfo> faceInfos = dg2File.getFaceInfos();
@@ -165,27 +156,24 @@ public class Main {
         }
         catch (Exception e){
             e.printStackTrace();
+            System.out.println("Error while reading passport data!");
             return;
         }
 
-        //System.out.println(fileText1);
-        //System.out.println(fileText2);
 
         MRZInfo mrzInfo = dg1File.getMRZInfo();
-        Person person = new Person(dg11File.getNameOfHolder(), dg11File.getOtherNames(), dg11File.getFullDateOfBirth(), dg11File.getPlaceOfBirth(), mrzInfo.getGender().toString(), mrzInfo.getNationality(), mrzInfo.getDocumentNumber(), mrzInfo.getDateOfExpiry());
+        Person person = new Person(dg11File.getNameOfHolder(), dg11File.getOtherNames(), dg11File.getFullDateOfBirth(), dg11File.getPlaceOfBirth(), mrzInfo.getGender().toString(), mrzInfo.getNationality(), mrzInfo.getDocumentNumber(), mrzInfo.getDateOfExpiry(), dg12File.getIssuingAuthority(), dg12File.getDateOfIssue());
+        PersonSerilizer.SavePerson(fileTemp, person);
 
-//        List<String> adress = dg11File.getPermanentAddress();
-//        String proffesion = dg11File.getProfession();
-//        String telephone = dg11File.getTelephone();
-//        String docCode = mrzInfo.getDocumentCode();
-//        System.out.println(person);
     }
 
-    public static void testOutput(String path) {
+    private static void testOutput(String path) {
         SimpleDateFormat dateFormatter = new SimpleDateFormat("dd.MM.yyyy");
         Date localBirthDate;
+        Date docDateOfIssue;
         try {
             localBirthDate = dateFormatter.parse("01.01.2000");
+            docDateOfIssue = dateFormatter.parse("01.01.2016");
         }
         catch (ParseException e) {
             e.printStackTrace();
@@ -200,7 +188,7 @@ public class Main {
         List<String> otherNames = new ArrayList<String>(){{
             add("Тестович");
         }};
-        Person person = new Person("Тестенко<Тест<<Testenko<Test", otherNames, localBirthDate, birthPlaces, "Male", "ukr", "000111111", "010127");
+        Person person = new Person("Тестенко<Тест<<Testenko<Test", otherNames, localBirthDate, birthPlaces, "Male", "ukr", "000111111", "010127", "0000", docDateOfIssue);
         PersonSerilizer.SavePerson(path, person);
     }
 }
